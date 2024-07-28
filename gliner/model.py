@@ -426,6 +426,7 @@ class GLiNER(nn.Module, PyTorchModelHubMixin):
             onnx_model_file: Optional[str] = 'model.onnx',
             compile_torch_model: Optional[bool] = False,
             session_options: Optional[ort.SessionOptions] = None,
+            use_safetensors: bool = False
             **model_kwargs,
     ):
         """
@@ -448,12 +449,13 @@ class GLiNER(nn.Module, PyTorchModelHubMixin):
             onnx_model_file (Optional[str]): Filename for ONNX model. Defaults to 'model.onnx'.
             compile_torch_model (Optional[bool]): Compile the PyTorch model. Defaults to False.
             session_options (Optional[onnxruntime.SessionOptions]): ONNX Runtime session options. Defaults to None.
+            use_safetensors (Optional[bool]): Whether to load a model.safetensors file or a pytorch_model.bin file. 
             **model_kwargs: Additional keyword arguments for model initialization.
 
         Returns:
             An instance of the model loaded from the pretrained weights.
         """
-        # Newer format: Use "pytorch_model.bin" and "gliner_config.json"
+        # Newer format: Use "pytorch_model.bin" or "model.safetensor", and "gliner_config.json".
         model_dir = Path(model_id)# / "pytorch_model.bin"
         if not model_dir.exists():
             model_dir = snapshot_download(
@@ -466,7 +468,11 @@ class GLiNER(nn.Module, PyTorchModelHubMixin):
                 token=token,
                 local_files_only=local_files_only,
             )
-        model_file = Path(model_dir) / "pytorch_model.bin"
+        
+        if use_safetensors:
+            model_file = Path(model_dir) / "model.safetensors"
+        else:
+            model_file = Path(model_dir) / "pytorch_model.bin"
         config_file = Path(model_dir) / "gliner_config.json"
 
         if load_tokenizer:
