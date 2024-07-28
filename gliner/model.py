@@ -12,6 +12,7 @@ from torch import nn
 import numpy as np
 
 import onnxruntime as ort
+from safetensors.torch import load_file
 
 from .modeling.base import BaseModel, SpanModel, TokenModel
 from .onnx.model import BaseORTModel, SpanORTModel, TokenORTModel
@@ -426,7 +427,7 @@ class GLiNER(nn.Module, PyTorchModelHubMixin):
             onnx_model_file: Optional[str] = 'model.onnx',
             compile_torch_model: Optional[bool] = False,
             session_options: Optional[ort.SessionOptions] = None,
-            use_safetensors: bool = False
+            use_safetensors: bool = False,
             **model_kwargs,
     ):
         """
@@ -472,7 +473,7 @@ class GLiNER(nn.Module, PyTorchModelHubMixin):
         if use_safetensors:
             model_file = Path(model_dir) / "model.safetensors"
         else:
-            model_file = Path(model_dir) / "pytorch_model_asdf.bin"
+            model_file = Path(model_dir) / "pytorch_model.bin"
         config_file = Path(model_dir) / "gliner_config.json"
 
         if load_tokenizer:
@@ -492,7 +493,10 @@ class GLiNER(nn.Module, PyTorchModelHubMixin):
             # to be able to laod GLiNER models from previous version
             if (config.class_token_index==-1 or config.vocab_size == -1) and resize_token_embeddings:
                 gliner.resize_token_embeddings(add_tokens=add_tokens)
-            state_dict = torch.load(model_file, map_location=torch.device(map_location))
+            if use_safetensors:
+                state_dict = load_file(model_file)
+            else:
+                state_dict = torch.load(model_file, map_location=torch.device(map_location))
             gliner.model.load_state_dict(state_dict, strict=strict)
             gliner.model.to(map_location)
             if compile_torch_model and 'cuda' in map_location:
