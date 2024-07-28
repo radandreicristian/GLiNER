@@ -472,7 +472,7 @@ class GLiNER(nn.Module, PyTorchModelHubMixin):
         if use_safetensors:
             model_file = Path(model_dir) / "model.safetensors"
         else:
-            model_file = Path(model_dir) / "pytorch_model.bin"
+            model_file = Path(model_dir) / "pytorch_model_asdf.bin"
         config_file = Path(model_dir) / "gliner_config.json"
 
         if load_tokenizer:
